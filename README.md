@@ -1,11 +1,11 @@
-# AdaptHybrid+CS — Système de Recommandation Hybride Adaptatif
+# AdaptHybrid — Système de Recommandation Hybride Adaptatif
 
 > **KNN-CF + SmartCBF avec Correction du Démarrage à Froid**  
 > Projet Final — Module Méthodologie de Recherche | ENSET Mohammedia, Université Hassan II, 2025–2026
 
 ---
 
-### 📦 Contenu de ce dépôt
+### Contenu de ce dépôt
 
 | Fichier | Description |
 |---|---|
@@ -41,7 +41,7 @@
 
 ## Vue d'ensemble
 
-**AdaptHybrid+CS** est un système de recommandation hybride adaptatif qui combine :
+**AdaptHybrid** est un système de recommandation hybride adaptatif qui combine :
 
 - **KNN-CF** — Filtrage collaboratif item-item utilisant la similarité cosinus
 - **SmartCBF** — Un module de filtrage par contenu enrichi avec pondération TF-IDF des genres, repli démographique et prior de popularité
@@ -56,8 +56,7 @@ Le paramètre de pondération **α** est appris par validation croisée (grid se
 
 | # | Question |
 |---|----------|
-| **RQ1** | Dans quelle mesure la combinaison hybride KNN-CF + SmartCBF améliore-t-elle les performances par rapport à chaque composante isolée, sur RMSE, NDCG@10 et Recall@10 ? |
-| **RQ2** | Le mécanisme adaptatif αeff atténue-t-il significativement les effets du démarrage à froid par rapport aux baselines pures et à l'hybride naïf ? |
+| **RQ1** | Dans quelle mesure la combinaison hybride KNN-CF + SmartCBF améliore-t-elle les performances par rapport à chaque composante isolée, sur RMSE, NDCG@10 et Recall@10 ? et Le mécanisme adaptatif αeff atténue-t-il significativement les effets du démarrage à froid par rapport aux baselines pures et à l'hybride naïf ? |
 
 Les deux hypothèses sont **confirmées** par les résultats expérimentaux.
 
@@ -120,7 +119,7 @@ Un filtre basé sur le contenu avec trois composantes complémentaires :
 
 $$\hat{y}_{CBF}(u, i) = \text{sim}(\text{profil}_u, \text{vec}_i) \cdot \bar{r}_i + \lambda \cdot \text{pop}(i)$$
 
-### 2. AdaptHybrid+CS — Pondération adaptative apprise
+### 2. AdaptHybrid — Pondération adaptative apprise
 Contrairement aux hybrides naïfs (α = 0,5), ce système :
 - Apprend le α optimal par jeu de données via validation croisée
 - Ajuste dynamiquement αeff en fonction de l'activité utilisateur à l'inférence
