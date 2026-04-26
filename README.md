@@ -9,9 +9,9 @@
 
 | Fichier | Description |
 |---|---|
-| `SmartCBF_Hybrid_V2_Enhanced.ipynb` | ✅ **Code source complet** — notebook d'expérimentation complet (11 sections, exécutable de bout en bout) |
-| `article_SmartCBF.pdf` | 📄 **Article de recherche** — article complet au format IEEE décrivant la méthode, le protocole et les résultats |
-| `poster_scientifique.pdf` | 🧾 **Poster scientifique** — synthèse visuelle du projet (méthodologie, architecture et résultats principaux) |
+| `SmartCBF_Hybrid.ipynb` | ✅ **Code source complet** — notebook d'expérimentation complet (11 sections, exécutable de bout en bout) |
+| `Article-Systeme de Recommandation.pdf` | 📄 **Article de recherche** — article complet au format IEEE décrivant la méthode, le protocole et les résultats 
+| `Poster-Systeme de Recommandation.pdf` | 🧾 **Poster scientifique** — synthèse visuelle du projet (méthodologie, architecture et résultats principaux) |
 | `README.md` | 📖 Ce fichier |
 
 > Tout ce qui est nécessaire pour reproduire les expériences est contenu dans le notebook. Les jeux de données sont téléchargés automatiquement à l'exécution.
@@ -379,10 +379,10 @@ print(recommendations)
 ```
 AdaptHybrid-CS/
 │
-├── SmartCBF_Hybrid_V2_Enhanced.ipynb   # Notebook principal (expérience complète)
-├── article_SmartCBF.pdf                # Article de recherche (ENSET 2025–2026)
+├── SmartCBF_Hybrid.ipynb   # Notebook principal (expérience complète)
+├── Article-Systeme de Recommandation.pdf                # Article de recherche (ENSET 2025–2026)
 ├── README.md                           # Ce fichier
-├── requirements.txt                    # Dépendances Python
+├── Poster-Systeme de Recommandation,pdf                    #Poster Scientifique
 │
 └── (téléchargés automatiquement à l'exécution)
     ├── ml-100k/                        # Jeu de données MovieLens 100K
@@ -436,7 +436,6 @@ Les deux jeux de données sont téléchargés automatiquement lors de l'exécuti
 ## Perspectives
 
 - [ ] Validation inter-domaines (e-commerce, musique, actualités)
-- [ ] Remplacer SmartCBF par un **encodeur neuronal two-tower** pour des représentations de contenu plus riches
 - [ ] Intégrer la **dimension temporelle** pour modéliser l'évolution des préférences utilisateur
 - [ ] Étendre l'analyse cold-start aux **utilisateurs avec zéro notation** (en utilisant uniquement les données démographiques)
 - [ ] Explorer l'**optimisation bayésienne des hyperparamètres** à la place du grid search
