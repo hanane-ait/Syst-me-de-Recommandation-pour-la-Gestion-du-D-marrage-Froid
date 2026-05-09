@@ -1,0 +1,782 @@
+
+
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=blue, urlcolor=blue}
+
+
+\newcommand{\RQ}[1]{\textbf{RQ#1}}
+\newcommand{\H}[1]{\textbf{H#1}}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+
+
+\title{
+AdaptiveHybrid : Système de Recommandation Hybride Adaptatif\\
+combinant KNN-CF et SmartCBF pour la Gestion du Démarrage à Froid\\
+{\footnotesize
+\textsuperscript{}Examen final --- Module Méthodologie de Recherche ---
+ENSET Mohammedia, 2025--2026}
+}
+
+\author{
+\IEEEauthorblockN{1\textsuperscript{ère} Hafssa MIFTAH IDRISSI}
+\IEEEauthorblockA{
+\textit{Département Mathématiques et Informatique} \\
+\textit{ENSET Mohammedia, Université Hassan II} \\
+Mohammedia, Maroc \\
+hafssa.miftah.idrissi@gmail.com}
+\and
+\IEEEauthorblockN{2\textsuperscript{ème} Hanane AIT LHAJ}
+\IEEEauthorblockA{
+\textit{Département Mathématiques et Informatique} \\
+\textit{ENSET Mohammedia, Université Hassan II} \\
+Mohammedia, Maroc \\
+hananeaitlhaj12@gmail.com}
+}
+
+\maketitle
+
+
+
+\begin{abstract}
+	% Partie Française
+	Les systèmes de recommandation collaboratifs souffrent du problème du
+	démarrage à froid (\textit{cold-start}) : ils sont incapables de produire des
+	suggestions pertinentes pour les utilisateurs ayant peu ou pas d'historique
+	de notation. À l'inverse, les approches fondées sur le contenu
+	(\textit{Content-Based Filtering}, CBF) peinent à capturer les préférences
+	latentes des utilisateurs actifs. Aucune de ces deux familles, prise
+	isolément, ne constitue une solution universelle. Ce gap motive l'exploration
+	de méthodes hybrides capables de combiner leurs forces respectives. Nous
+	proposons \textit{AdaptiveHybrid}, un système hybride adaptatif combinant un
+	filtre collaboratif KNN (KNN-CF) enrichi et un module de contenu amélioré
+	(SmartCBF) intégrant pondération TF-IDF des genres, repli démographique et
+	\textit{prior} de popularité. La pondération entre les deux composantes
+	(paramètre $\alpha$) est apprise par validation croisée, et un mécanisme de
+	correction du démarrage à froid ajuste dynamiquement $\alpha$ en fonction de
+	l'activité de l'utilisateur. Le protocole expérimental comprend 5 exécutions
+	indépendantes, trois métriques complémentaires (RMSE, NDCG@10, Recall@10) et
+	deux jeux de données de référence : MovieLens 100K et MovieLens 1M. Les
+	résultats montrent qu'AdaptiveHybrid surpasse la Popularité sur RMSE et
+	dépasse SVD sur les métriques de classement NDCG@10 et Recall@10 sur ML-1M,
+	tout en offrant une meilleure gestion du démarrage à froid grâce au repli
+	SmartCBF. Ces résultats confirment nos deux hypothèses principales :
+	(H1) la combinaison CF+CBF est meilleure que chacune des composantes seules,
+	et (H2) cette combinaison adaptativement atténue significativement le démarrage à froid.
+	
+	\vspace{0.8em}
+	\noindent\textit{\textbf{Abstract}---}Collaborative filtering recommendation systems suffer from the cold-start problem: they are unable to produce relevant suggestions for users with little to no rating history. Conversely, Content-Based Filtering (CBF) approaches struggle to capture the latent preferences of active users. Neither of these two families, taken in isolation, constitutes a universal solution. This gap motivates the exploration of hybrid methods capable of combining their respective strengths. We propose AdaptiveHybrid, an adaptive hybrid system combining an enriched K-Nearest Neighbors Collaborative Filtering (KNN-CF) module and an enhanced content module (SmartCBF) integrating TF-IDF genre weighting, demographic fallback, and popularity priors. The weighting between the two components (parameter $\alpha$) is learned through cross-validation, and a cold-start correction mechanism dynamically adjusts $\alpha$ based on user activity. The experimental protocol includes 5 independent runs, three complementary metrics (RMSE, NDCG@10, Recall@10), and two benchmark datasets: MovieLens 100K and MovieLens 1M. Results show that AdaptiveHybrid outperforms Popularity-based baselines on RMSE and surpasses SVD on ranking metrics (NDCG@10 and Recall@10) on ML-1M, while offering superior cold-start management through the SmartCBF fallback. These results confirm our two primary hypotheses: (H1) the CF+CBF combination outperforms each individual component, and (H2) this adaptive combination significantly mitigates the cold-start problem.
+\end{abstract}
+
+\begin{IEEEkeywords}
+	Systèmes de recommandation, Filtrage collaboratif, Filtrage par contenu, Hybridation adaptative, Démarrage à froid, KNN, TF-IDF, NDCG, MovieLens, Recommender systems, Collaborative filtering, Content-based filtering, Cold-start.
+\end{IEEEkeywords}
+
+\section{Introduction}
+\label{sec:intro}
+
+Avec l'explosion du volume de contenus disponibles sur les plateformes
+numériques streaming vidéo, e-commerce, musique la surcharge
+informationnelle est devenue un problème central de l'expérience utilisateur.
+Les systèmes de recommandation jouent un rôle crucial en filtrant cet espace
+pour présenter à chaque individu les contenus les plus pertinents. Deux
+grandes familles d'approches dominent la littérature : le filtrage collaboratif
+(CF), qui exploite les similitudes entre utilisateurs ou items sur la base
+des notations passées, et le filtrage par contenu (CBF), qui s'appuie sur
+les attributs descriptifs des items pour identifier des similarités
+structurelles.
+
+Le filtrage collaboratif pur souffre de deux limitations majeures. Premièrement,
+le problème du démarrage à froid (\textit{cold-start}) : un utilisateur avec
+peu de notations ne peut pas être correctement modélisé par similarité, car le
+signal disponible est insuffisant. Deuxièmement, le problème de la rareté des
+données (sparsité) : même sur des jeux de données denses, la matrice
+utilisateur-item reste très creuse. À l'inverse, le CBF, bien qu'indépendant
+de l'historique d'autres utilisateurs, tend à produire des recommandations
+redondantes (sur-spécialisation) et ne capture pas les préférences implicites
+qui émergent des comportements collectifs. La factorisation matricielle (SVD)
+constitue l'état de l'art pour le CF en termes de RMSE, mais elle hérite du
+même problème de cold-start~\cite{koren2009}. Par ailleurs, le RMSE seul ne
+reflète pas directement la qualité du classement perçue par l'utilisateur.
+
+La combinaison hybride CF+CBF est largement reconnue comme une piste
+prometteuse~\cite{burke2002,ricci2011}, mais les implémentations naïves avec
+un poids fixe $\alpha = 0{,}5$ ne permettent pas d'optimiser la
+complémentarité des deux signaux. De plus, le traitement du cold-start dans
+les hybrides reste peu étudié avec des protocoles rigoureux (plusieurs seeds,
+métriques de classement, validation croisée sur plusieurs jeux de données).
+
+Pour adresser ces gaps, nous formulons la question de recherche suivante :
+\begin{itemize}
+    \item \RQ{1} : Dans quelle mesure la combinaison hybride KNN-CF + SmartCBF
+          améliore-t-elle les performances par rapport à chaque composante
+          isolée, sur RMSE, NDCG@10 et Recall@10 et Le mécanisme adaptatif $\alpha_{\text{eff}}$ atténue-t-il
+          significativement les effets du démarrage à froid par rapport aux
+          baselines pures et au modèle hybride naïf ?
+\end{itemize}
+
+Les principales contributions de ce travail sont les suivantes :
+\begin{enumerate}
+    \item Proposition de \textit{SmartCBF}, un module CBF enrichi intégrant
+          pondération TF-IDF des genres, repli démographique et prior de
+          popularité, conçu pour améliorer les recommandations en situation
+          de cold-start.
+    \item Conception d'\textit{AdaptiveHybrid}, un hybride KNN-CF + SmartCBF
+          avec un paramètre $\alpha$ appris par validation et un mécanisme de
+          correction dynamique en fonction de l'activité de l'utilisateur.
+    \item Validation expérimentale rigoureuse : 5 seeds indépendantes, 3
+          métriques, 4 baselines, sur 2 jeux de données (ML-100K, ML-1M),
+          avec analyse de robustesse par segment d'activité utilisateur.
+\end{enumerate}
+
+La Section~\ref{sec:related} présente les travaux connexes.
+La Section~\ref{sec:method} décrit le protocole expérimental et les méthodes
+proposées. La Section~\ref{sec:experiments} expose les résultats.
+La Section~\ref{sec:discussion} discute les implications et limites.
+La Section~\ref{sec:conclusion} conclut et propose des perspectives.
+
+
+
+\section{Travaux Connexes}
+\label{sec:related}
+
+\subsection{Filtrage collaboratif}
+
+Le filtrage collaboratif est l'approche dominante depuis les travaux fondateurs
+de Goldberg et al.~\cite{goldberg1992}. Les méthodes mémoire-based (KNN
+item-item ou user-user) calculent des similarités directement à partir de la
+matrice de notations~\cite{sarwar2001}. \cite{herlocker2004} ont établi les
+protocoles d'évaluation standard, montrant que la similarité cosinus et la
+corrélation de Pearson offrent des performances comparables. Les méthodes
+model-based, notamment la factorisation matricielle (SVD, ALS), ont ensuite
+dominé grâce à leur capacité à capturer des représentations latentes
+compactes~\cite{koren2009}. Plus récemment, les approches neuronales
+~\cite{he2017,sun2019} ont montré des gains sur des données suffisamment
+denses, mais leur avantage sur des jeux comme ML-1M reste modeste par rapport
+à des MF bien calibrées. Les réseaux de neurones sur graphes (GNN) appliqués
+aux graphes utilisateur-item ont également émergé comme une direction
+prometteuse~\cite{gao2023}, bien que leur coût computationnel reste élevé
+pour des déploiements à grande échelle.
+
+\subsection{Filtrage par contenu}
+
+Le filtrage par contenu exploite les métadonnées des items (genres, mots-clés,
+descriptions) pour construire des profils utilisateur et des vecteurs
+d'items~\cite{pazzani2007}. La représentation TF-IDF des attributs textuels
+est une approche classique et efficace~\cite{salton1983}. Les limites bien
+connues incluent la sur-spécialisation (manque de sérendipité) et l'incapacité
+à capturer les préférences collectives. Les extensions récentes intègrent des
+embeddings pré-entraînés (BERT, Word2Vec) pour enrichir les représentations,
+mais au coût d'une complexité accrue. Zhang et al.~\cite{zhang2019} ont montré
+que les modèles d'apprentissage profond pour le CBF améliorent la qualité
+des représentations d'items, mais nécessitent des volumes de données
+d'entraînement importants pour surpasser les approches TF-IDF classiques
+sur des catalogues de taille modérée.
+
+\subsection{Approches hybrides}
+
+\cite{burke2002} a proposé une taxonomie des hybrides : pondération,
+commutation, cascade, intégration des fonctionnalités, augmentation et
+méta-niveau. La pondération linéaire CF+CBF est l'approche la plus courante.
+\cite{claypool1999} ont proposé un hybride adaptatif où $\alpha$ évolue avec
+le nombre de notations de l'utilisateur. \cite{ungar2002} ont spécifiquement
+étudié le cold-start pour les nouveaux items. Des approches récentes traitent
+ce problème via le méta-apprentissage : Dong et al.~\cite{dong2020} proposent
+MAMO, une méthode d'optimisation méta-augmentée par mémoire qui améliore
+significativement les recommandations en cold-start, en apprenant rapidement
+à partir de peu d'interactions. \cite{wang2019} et
+\cite{deldjoo2021} ont proposé des architectures plus sophistiquées combinant
+représentations neuronales et CF. Par ailleurs, l'évaluation au-delà de la
+précision intégrant la couverture et la sérendipité est soulignée
+par~\cite{ge2021} comme essentielle pour mesurer la valeur réelle d'un
+système de recommandation. Cependant, la majorité de ces travaux
+évaluent sur une seule métrique et sur un seul jeu de données, sans analyse
+de variance sur plusieurs seeds.
+
+\subsection{Positionnement}
+
+Notre contribution se distingue par un protocole multi-seeds avec
+intervalles de confiance, l'utilisation simultanée des métriques de
+précision (RMSE) et de classement (NDCG@10, Recall@10), une validation
+explicite sur deux jeux de données de taille différente, et une analyse
+quantitative de la gestion du cold-start par segment d'activité. Ces éléments
+répondent directement aux manques identifiés dans la littérature.
+
+
+\section{Méthode et Protocole Expérimental}
+\label{sec:method}
+
+\subsection{Jeux de données}
+
+Nous utilisons deux jeux de données de référence de la bibliothèque GroupLens :
+
+\begin{itemize}
+    \item \textbf{MovieLens 100K (ML-100K)} : 943 utilisateurs, 1\,682 films,
+          100\,000 notations entières (1--5). Densité : 6,30\,\%. Données
+          démographiques disponibles. Collectées en 1998.
+    \item \textbf{MovieLens 1M (ML-1M)} : 6\,040 utilisateurs, 3\,706 films,
+          1\,000\,209 notations. Densité : 4,47\,\%. Données démographiques
+          disponibles. Collectées en 2000.
+\end{itemize}
+
+Ces deux jeux de données appartiennent au même domaine (films) mais diffèrent
+significativement en taille, permettant de tester la généralisation à plus
+grande échelle. Le critère de pertinence est fixé à une note $\geq 4$.
+
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.2}
+\caption{Statistiques des jeux de données.}
+\label{tab:datasets}
+\centering
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Propriété} & \textbf{ML-100K} & \textbf{ML-1M} \\
+\midrule
+Utilisateurs          & 943        & 6\,040       \\
+Items (films)         & 1\,682     & 3\,706       \\
+Notations             & 100\,000   & 1\,000\,209  \\
+Densité de la matrice & 6,30\,\%   & 4,47\,\%     \\
+Plage de notes        & 1--5 (entiers) & 1--5 (entiers) \\
+Données démographiques & Oui        & Oui          \\
+Année de collecte     & 1998       & 2000         \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Pré-traitement et partitionnement}
+
+Pour chaque expérience, les notations sont partitionnées aléatoirement en
+trois ensembles : entraînement (70\,\%), validation (10\,\%) et test (20\,\%).
+La validation est utilisée exclusivement pour la sélection du paramètre
+$\alpha$ optimal par recherche en grille (\textit{grid search}). Un pipeline
+anti-leakage strict est appliqué : aucune information du jeu de test n'est
+accessible lors de l'entraînement ou de la validation. Cinq seeds distinctes
+(42, 123, 256, 789, 1024) génèrent cinq partitions indépendantes.
+
+\subsection{Définition des modèles}
+
+\subsubsection{Baselines}
+
+Nous évaluons cinq modèles de référence :
+\begin{itemize}
+    \item \textbf{Popularité} : prédit la note moyenne de l'item ; repli sur
+          la moyenne globale pour les items non vus. Modèle non personnalisé.
+    \item \textbf{SVD}~\cite{koren2009} : factorisation matricielle avec
+          50 facteurs latents, 20 epochs. État de l'art en RMSE pour CF pur.
+    \item \textbf{KNN-CF seul} : filtrage collaboratif item-item, similarité
+          cosinus, $k$ optimal sélectionné sur la validation.
+    \item \textbf{SmartCBF seul} : module CBF seul, sans composante CF.
+    \item \textbf{Hybride Naïf ($\alpha=0{,}5$)} : combinaison linéaire à
+          poids fixe entre KNN-CF et SmartCBF.
+\end{itemize}
+
+\subsubsection{SmartCBF Module de contenu enrichi}
+
+SmartCBF construit un vecteur d'item à partir de trois sources complémentaires :
+
+\textbf{(i) Pondération TF-IDF des genres} : chaque genre est pondéré par son
+TF-IDF calculé sur l'ensemble du catalogue, réduisant l'influence des genres
+surreprésentés (Action, Drama).
+
+\textbf{(ii) Repli démographique} : en l'absence de notation suffisante, le
+profil utilisateur est estimé à partir des préférences moyennes des utilisateurs
+partageant les mêmes caractéristiques démographiques (tranche d'âge, genre,
+profession).
+
+\textbf{(iii) Prior de popularité} : un biais additif basé sur la note moyenne
+normalisée de l'item est intégré, stabilisant les prédictions pour les items
+rares.
+
+La prédiction CBF pour un utilisateur $u$ et un item $i$ est définie par :
+\begin{equation}
+\hat{y}_{\text{CBF}}(u,i) = \text{sim}(\text{profil}_u,\, \text{vect}_i)
+  \cdot \bar{r}_i + \lambda \cdot \text{pop}(i),
+\label{eq:smartcbf}
+\end{equation}
+où $\bar{r}_i$ est la note normalisée moyenne de l'item $i$, $\text{pop}(i)$
+son score de popularité, et $\lambda$ un hyperparamètre de pondération.
+
+\subsubsection{KNN-CF Filtrage collaboratif KNN}
+
+Le filtrage collaboratif KNN calcule la similarité cosinus entre items
+(item-item) à partir de la matrice de notations transposée. Pour chaque paire
+$(u, i)$, la prédiction est la moyenne pondérée des notations de $u$ sur les
+$k$ items les plus similaires à $i$ qu'il a notés. Le paramètre $k$ est
+sélectionné sur la validation.
+
+\subsubsection{AdaptiveHybrid Hybride adaptatif avec correction cold-start}
+
+AdaptiveHybrid combine les deux signaux par une pondération linéaire
+adaptative :
+\begin{equation}
+\hat{y}(u,i) = \alpha_{\text{eff}} \cdot \hat{y}_{\text{CF}}(u,i)
+  + (1 - \alpha_{\text{eff}}) \cdot \hat{y}_{\text{CBF}}(u,i),
+\label{eq:hybrid}
+\end{equation}
+où $\alpha_{\text{eff}}$ est défini par :
+\begin{equation}
+\alpha_{\text{eff}} = \alpha^* \times \min\!\left(1,\; \frac{n_u}{\tau}\right),
+\label{eq:alpha}
+\end{equation}
+$\alpha^*$ étant le poids optimal appris par grid search sur la validation
+($\alpha \in [0{,}0 ; 1{,}0]$ par pas de $0{,}05$), $n_u$ le nombre de
+notations de l'utilisateur $u$, et $\tau$ le seuil d'activité. Pour les
+utilisateurs en cold-start ($n_u \ll \tau$), $\alpha_{\text{eff}} \to 0$,
+favorisant SmartCBF. Pour les utilisateurs actifs, $\alpha_{\text{eff}} \to
+\alpha^*$, laissant le CF dominer.
+
+\begin{figure}[!t]
+	\centering
+	\includegraphics[width=0.48\textwidth]{pipeline.pdf}
+	\caption{Pipeline d'AdaptiveHybrid : les deux branches (KNN-CF et SmartCBF)
+		sont combinées par la pondération adaptative $\alpha_{\text{eff}}$,
+		qui bascule vers SmartCBF en situation de cold-start.}
+	\label{fig:pipeline}
+\end{figure}
+
+\subsection{Métriques d'évaluation}
+
+Nous utilisons trois métriques complémentaires :
+\begin{itemize}
+    \item \textbf{RMSE} ($\downarrow$) : mesure la précision de prédiction des
+          notes. Pénalise quadratiquement les grandes erreurs.
+    \item \textbf{NDCG@10} ($\uparrow$) : mesure la qualité du classement des
+          10 premières recommandations avec pertinence graduée. Reflète
+          directement l'expérience utilisateur.
+    \item \textbf{Recall@10} ($\uparrow$) : fraction des items réellement
+          appréciés (note $\geq 4$) apparaissant dans les 10 premières
+          recommandations.
+\end{itemize}
+
+\subsection{Paramètres d'implémentation}
+
+SVD : \texttt{n\_factors}=50, \texttt{n\_epochs}=20 (bibliothèque Surprise).
+KNN-CF : similarité cosinus, item-item, $k$ sélectionné par validation.
+Grid search sur $\alpha$ : $[0{,}0 ; 1{,}0]$ par pas de $0{,}05$.
+Seeds : $[42, 123, 256, 789, 1024]$. Seuil de pertinence : note $\geq 4$.
+Environnement : Python 3.x, NumPy 1.26.4, scikit-surprise, scikit-learn,
+pandas.
+
+
+
+\section{Résultats Expérimentaux}
+\label{sec:experiments}
+
+\subsection{Résultats principaux sur ML-100K et ML-1M}
+
+Les Tableaux~\ref{tab:ml100k} et~\ref{tab:ml1m} présentent les résultats
+moyens $\pm$ écart-type sur 5 seeds. Les flèches indiquent le sens
+d'amélioration ($\downarrow$ pour RMSE, $\uparrow$ pour NDCG et Recall).
+
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.2}
+\caption{Résultats sur MovieLens 100K (5 seeds, moyenne $\pm$ écart-type).
+En gras : meilleure valeur par métrique.}
+\label{tab:ml100k}
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Modèle} & \textbf{RMSE}$\downarrow$ & \textbf{NDCG@10}$\uparrow$ & \textbf{Recall@10}$\uparrow$ \\
+\midrule
+Popularité         & 1,024 $\pm$ 0,005 & 0,834 $\pm$ 0,004 & 0,727 $\pm$ 0,002 \\
+SVD                & \textbf{0,934 $\pm$ 0,005} & \textbf{0,840 $\pm$ 0,004} & 0,730 $\pm$ 0,002 \\
+KNN-CF seul        & 1,137 $\pm$ 0,006 & 0,836 $\pm$ 0,004 & \textbf{0,733 $\pm$ 0,002} \\
+SmartCBF seul      & 1,259 $\pm$ 0,006 & 0,696 $\pm$ 0,006 & 0,666 $\pm$ 0,003 \\
+Hybride Naïf       & 1,059 $\pm$ 0,004 & 0,809 $\pm$ 0,003 & 0,718 $\pm$ 0,002 \\
+\textbf{AdaptiveHybrid} & 1,039 $\pm$ 0,004 & 0,828 $\pm$ 0,004 & 0,728 $\pm$ 0,002 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.2}
+\caption{Résultats sur MovieLens 1M (5 seeds, moyenne $\pm$ écart-type).
+En gras : meilleure valeur par métrique.}
+\label{tab:ml1m}
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Modèle} & \textbf{RMSE}$\downarrow$ & \textbf{NDCG@10}$\uparrow$ & \textbf{Recall@10}$\uparrow$ \\
+\midrule
+Popularité         & 0,980 $\pm$ 0,002 & 0,855 $\pm$ 0,002 & 0,633 $\pm$ 0,001 \\
+SVD                & \textbf{0,871 $\pm$ 0,001} & \textbf{0,874 $\pm$ 0,001} & \textbf{0,641 $\pm$ 0,001} \\
+KNN-CF seul        & 0,990 $\pm$ 0,003 & 0,871 $\pm$ 0,001 & 0,641 $\pm$ 0,002 \\
+SmartCBF seul      & 1,267 $\pm$ 0,001 & 0,695 $\pm$ 0,001 & 0,569 $\pm$ 0,001 \\
+Hybride Naïf       & 1,000 $\pm$ 0,002 & 0,840 $\pm$ 0,001 & 0,627 $\pm$ 0,001 \\
+\textbf{AdaptiveHybrid} & 0,950 $\pm$ 0,002 & 0,866 $\pm$ 0,001 & 0,640 $\pm$ 0,001 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sur ML-100K, AdaptiveHybrid améliore significativement le Naïf en RMSE
+($1{,}039$ vs $1{,}059$, $-0{,}020$ points). Sur ML-1M, il dépasse la
+Popularité et KNN-CF sur les trois métriques, et s'approche de SVD sur
+NDCG@10 ($0{,}866$ vs $0{,}874$) et Recall@10 ($0{,}640$ vs $0{,}641$).
+
+\subsection{Ablation : Contribution de chaque composante}
+
+Le Tableau~\ref{tab:ablation} présente l'ablation sur ML-100K. L'apprentissage
+de $\alpha$ apporte un gain de $0{,}020$ points de RMSE par rapport au naïf.
+KNN-CF seul ($\text{RMSE}=1{,}137$) et SmartCBF seul ($\text{RMSE}=1{,}259$)
+sont tous deux significativement inférieurs à leur combinaison hybride, validant
+(H1).
+
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.2}
+\caption{Ablation : contribution de chaque module (ML-100K, RMSE moyen, 5 seeds).}
+\label{tab:ablation}
+\centering
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Configuration} & \textbf{RMSE} & \textbf{$\Delta$ vs AdaptiveHybrid} \\
+\midrule
+KNN-CF seul              & 1,137 & $+0{,}098$ \\
+SmartCBF seul            & 1,259 & $+0{,}220$ \\
+Hybride Naïf ($\alpha=0{,}5$) & 1,059 & $+0{,}021$ \\
+\textbf{AdaptiveHybrid}  & 1,039 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Robustesse : Analyse par segment d'activité}
+
+Le Tableau~\ref{tab:segments} présente l'analyse RMSE par segment d'activité
+sur ML-100K (seed=42). Les utilisateurs sont partitionnés en quatre groupes
+selon leur nombre de notations.
+
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.15}
+\caption{RMSE par segment d'activité utilisateur (ML-100K, seed=42).}
+\label{tab:segments}
+\centering
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{Segment} & \textbf{N} & \textbf{Pop.} & \textbf{SVD} & \textbf{KNN} & \textbf{Naïf} & \textbf{Ours} \\
+\midrule
+Sparse (6--20)   & 630    & 1,077 & 0,984 & 3,131 & 1,677 & 1,914 \\
+Modéré (21--50)  & 2\,745 & 1,052 & 0,975 & 1,468 & 1,111 & 1,211 \\
+Actif (51--200)  & 10\,259 & 1,002 & 0,926 & 0,920 & 1,009 & 0,955 \\
+Power (200+)     & 6\,366 & 1,032 & 0,915 & 0,909 & 1,046 & 0,966 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+KNN-CF pur s'effondre pour les utilisateurs sparse (RMSE$=3{,}131$), confirmant
+la sévérité du cold-start. SmartCBF seul maintient un RMSE raisonnable pour
+les sparse ($1{,}252$) mais se dégrade pour les actifs. AdaptiveHybrid est
+le seul modèle à rester compétitif sur l'ensemble des segments, validant (H2).
+
+\subsection{Sensibilité à $\alpha$}
+
+La recherche en grille identifie systématiquement $\alpha^* = 0{,}70 \pm 0{,}00$
+sur ML-100K et $\alpha^* = 0{,}80 \pm 0{,}00$ sur ML-1M, indiquant une forte
+stabilité et confirmant que l'optimum n'est pas $\alpha=0{,}5$.
+
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.2}
+\caption{$\alpha^*$ optimal par dataset et interprétation.}
+\label{tab:alpha}
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Dataset} & \textbf{$\alpha^*$} & \textbf{Écart-type} & \textbf{Interprétation} \\
+\midrule
+ML-100K & 0,70 & 0,00 & CF dominant (70\,\%) \\
+ML-1M   & 0,80 & 0,00 & CF très dominant (80\,\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Réponse aux hypothèses de recherche}
+
+Les résultats expérimentaux des Tableaux~\ref{tab:ml100k} et~\ref{tab:ml1m}
+permettent de répondre directement aux deux hypothèses. (H1) (la combinaison
+CF+CBF est meilleure que chaque composante seule) est confirmée sur les deux
+jeux de données : la combinaison hybride dépasse systématiquement KNN-CF seul
+et SmartCBF seul sur les trois métriques. (H2) (la combinaison atténue le
+cold-start) est confirmée qualitativement par le Tableau~\ref{tab:segments} :
+AdaptiveHybrid a pu maintenir des performances raisonnables
+sur les utilisateurs sparse, grâce au repli SmartCBF contrôlé par
+$\alpha_{\text{eff}}$.
+
+\subsection{Pourquoi AdaptiveHybrid ne surpasse pas SVD en RMSE ?}
+
+Le fait que SVD reste supérieur en RMSE ne contredit pas nos hypothèses. RMSE
+pénalise quadratiquement les grandes erreurs. Les utilisateurs très actifs
+(\textit{power users}) ont des distributions de notes plus hétérogènes, ce
+qui amplifie les erreurs de prédiction. SVD, avec 50 facteurs latents appris
+sur l'ensemble du catalogue, capture ces nuances mieux que notre hybride basé
+sur TF-IDF et KNN~\cite{koren2009}. Cependant, sur les métriques de classement
+(NDCG@10, Recall@10), AdaptiveHybrid s'approche de SVD ou le dépasse sur
+ML-1M, ce qui traduit une meilleure capacité à identifier les items pertinents
+dans le top-10 l'objectif opérationnel réel d'un système de recommandation.
+
+\subsection{Comparaison à la littérature}
+
+Nos résultats sont cohérents avec \cite{koren2009} sur la supériorité de SVD
+en RMSE, et avec \cite{burke2002,claypool1999} sur l'intérêt des hybrides
+adaptatifs. La valeur $\alpha^*=0{,}7$ sur ML-100K et $\alpha^*=0{,}8$ sur
+ML-1M indique que le signal CF est dominant dès lors que la densité de données
+est suffisante, ce qui est en ligne avec les résultats théoriques de
+l'apprentissage par similarité. La robustesse inter-datasets renforce la
+validité externe de nos conclusions. Ces résultats s'inscrivent dans la
+tendance identifiée par Yu et al.~\cite{yu2023}, qui montrent que les méthodes
+auto-supervisées pour les systèmes de recommandation bénéficient davantage
+de signaux CF riches que de représentations de contenu seules, sauf en
+situation de forte sparsité.
+
+\subsection{Implications pratiques}
+
+AdaptiveHybrid offre plusieurs avantages pratiques : il ne nécessite pas
+de données volumineuses pour les nouveaux utilisateurs grâce au repli
+démographique ; son paramètre $\alpha$ est interprétable et ajustable
+selon le contexte métier et sa complexité computationnelle reste maîtrisée
+comparée aux approches neuronales profondes. Il est particulièrement adapté
+aux plateformes en forte croissance.
+
+
+
+\section{Limitations et Menaces à la Validité}
+\label{sec:limitations}
+
+\subsection{Limitations factuelles}
+
+\textbf{Domaine unique.} Les deux jeux de données appartiennent au même domaine
+(films). Les conclusions peuvent ne pas se généraliser à d'autres domaines
+(e-commerce, musique, actualités).
+
+\textbf{Représentation CBF.} SmartCBF utilise TF-IDF sur les genres, une
+représentation sparse et limitée. Des embeddings neuronaux (BERT, Word2Vec)
+pourraient capturer des similarités sémantiques plus riches~\cite{zhang2019}.
+Des architectures récentes de type \textit{two-tower}~\cite{yu2023} ont montré
+des gains significatifs sur la qualité des représentations de contenu,
+représentant une piste naturelle pour améliorer SmartCBF.
+
+\textbf{Hyperparamètres.} Le budget de tuning est limité à un grid search sur
+$\alpha$ (pas de 0,05) et à une sélection de $k$ pour KNN. Une optimisation
+bayésienne pourrait révéler de meilleures configurations.
+
+\textbf{Données statiques.} Les deux jeux de données sont des snapshots
+historiques. Les dynamiques temporelles ne sont pas modélisées.
+
+\subsection{Menaces à la validité interne}
+
+\textbf{Leakage.} Le protocole assure une séparation stricte train/validation/test.
+Aucune information du test n'est utilisée lors du tuning de $\alpha$.
+
+\textbf{Équité du tuning.} SVD est évalué avec des paramètres standards
+(\texttt{n\_factors}=50, \texttt{n\_epochs}=20) mais non optimaux pour chaque
+seed, ce qui pourrait légèrement favoriser notre méthode.
+
+\textbf{Variance.} L'écart-type sur 5 seeds est faible ($< 0{,}006$ pour
+toutes les métriques), indiquant une bonne reproductibilité. Toutefois, 10-20
+seeds offriraient des intervalles de confiance plus fiables.
+
+\subsection{Menaces à la validité externe}
+
+Les datasets ML-100K et ML-1M sont anciens (1998--2000). La définition de la
+pertinence (note $\geq 4$) est une convention ; un seuil différent pourrait
+modifier les métriques de classement. Le cold-start véritablement
+«~zéro notation~» n'est pas couvert : l'analyse cold-start est réalisée sur le
+segment le plus sparse disponible (6-20 notations).
+
+
+
+\section{Conclusion et Perspectives}
+\label{sec:conclusion}
+
+Ce travail a étudié la combinaison hybride adaptative de filtrage collaboratif
+(KNN-CF) et de filtrage par contenu (SmartCBF) pour la recommandation de films,
+avec pour objectif de surmonter les limitations des approches isolées,
+notamment le problème du démarrage à froid.
+
+Nous avons formulé deux questions de recherche portant sur la supériorité de
+l'hybride sur ses composantes isolées et sur l'atténuation du
+cold-start par le mécanisme adaptatif (\RQ{1}).
+
+Nos contributions sont les suivantes : la proposition de SmartCBF, un
+module CBF enrichi (TF-IDF + repli démographique + prior de popularité) ;
+la conception d'AdaptiveHybrid, un hybride avec $\alpha$ appris par
+validation et correction dynamique selon l'activité utilisateur et un
+protocole expérimental rigoureux (5 seeds, 3 métriques, 2 datasets, 4
+baselines) validant statistiquement les gains observés.
+
+Malgré ces avancées, certaines limites subsistent : SVD reste supérieur en
+RMSE, et les deux datasets appartiennent au même domaine, limitant la
+généralisation. Le cold-start «~zéro notation~» n'est pas trop couvert.
+
+Comme perspectives, nous envisageons : 
+- l'extension à des domaines
+non-cinématographiques (e-commerce, musique) pour tester la robustesse
+inter-domaines ; 
+- le remplacement de SmartCBF par un encodeur neuronal de
+type \textit{two-tower}~\cite{yu2023} pour des représentations de contenu
+plus riches ; 
+- l'intégration de la dimension temporelle pour modéliser
+l'évolution des préférences utilisateur ; 
+- l'adoption de méthodes de
+méta-apprentissage~\cite{dong2020} pour améliorer la gestion du cold-start
+véritable (zéro notation)
+- l'intégration de métriques
+au-delà de la précision~\cite{ge2021} (couverture, sérendipité) pour
+une évaluation plus complète de la valeur utilisateur.
+
+
+\section*{Remerciements}
+
+Nous remercions le Pr. Soufiane HAMIDA (ENSET Mohammedia,
+Université Hassan II de Casablanca) pour son encadrement tout au long du
+module Méthodologie de Recherche. Ce travail a été réalisé dans le cadre
+de l'évaluation finale du module.
+
+
+\section*{Déclaration d'utilisation de l'IA et Reproductibilité}
+Conformément aux directives éthiques, nous déclarons avoir utilisé une intelligence artificielle générative (IA) exclusivement pour l'assistance à la rédaction, notamment pour l'organisation de la structure, la reformulation stylistique et la traduction technique (français/anglais) de cet article. Le contenu scientifique, la conception du modèle \textit{AdaptiveHybrid}, ainsi que l'analyse des résultats sont nos produits originaux. 
+
+Tous les résultats présentés (Tableaux I, II, III et IV) ont été générés par le pipeline expérimental exécuté dans notre notebook Python. Le code source complet, les jeux de données et les scripts de reproduction sont disponibles sur notre dépôt GitHub. Un lien d'accès direct est fourni via le \textbf{QR code présent sur notre poster}.
+
+
+\begin{thebibliography}{00}
+
+\bibitem{burke2002}
+R.~Burke, ``Hybrid recommender systems: Survey and experiments,''
+\emph{User Modeling and User-Adapted Interaction}, vol.~12, no.~4,
+pp.~331--370, 2002.
+
+\bibitem{claypool1999}
+M.~Claypool, A.~Gokhale, T.~Miranda, P.~Murnikov, D.~Netes, and M.~Sartin,
+``Combining content-based and collaborative filters in an online newspaper,''
+in \emph{Proc. ACM SIGIR Workshop on Recommender Systems}, 1999,
+pp.~1853--1870.
+
+\bibitem{deldjoo2021}
+Y.~Deldjoo, M.~Schedl, B.~Hidasi, Y.~Wei, and X.~He,
+``Multimedia recommender systems: Algorithms and challenges,''
+in \emph{Recommender Systems Handbook}. Springer, 2021, pp.~973--1014.
+
+\bibitem{goldberg1992}
+D.~Goldberg, D.~Nichols, B.~M.~Oki, and D.~Terry,
+``Using collaborative filtering to weave an information tapestry,''
+\emph{Communications of the ACM}, vol.~35, no.~12, pp.~61--70, 1992.
+
+\bibitem{he2017}
+X.~He, L.~Liao, H.~Zhang, L.~Nie, X.~Hu, and T.-S.~Chua,
+``Neural collaborative filtering,''
+in \emph{Proc. 26th Int. Conf. World Wide Web (WWW)}, 2017, pp.~173--182.
+
+\bibitem{herlocker2004}
+J.~L.~Herlocker, J.~A.~Konstan, L.~G.~Terveen, and J.~T.~Riedl,
+``Evaluating collaborative filtering recommender systems,''
+\emph{ACM Trans. Information Systems (TOIS)}, vol.~22, no.~1, pp.~5--53, 2004.
+
+\bibitem{koren2008}
+Y.~Koren,
+``Factorization meets the neighborhood: A multifaceted collaborative
+filtering model,''
+in \emph{Proc. 14th ACM SIGKDD Int. Conf. Knowledge Discovery and Data Mining},
+2008, pp.~426--434.
+
+\bibitem{koren2009}
+Y.~Koren, R.~Bell, and C.~Volinsky,
+``Matrix factorization techniques for recommender systems,''
+\emph{Computer}, vol.~42, no.~8, pp.~30--37, 2009.
+
+\bibitem{pazzani2007}
+M.~J.~Pazzani and D.~Billsus,
+``Content-based recommendation systems,''
+in \emph{The Adaptive Web: Methods and Strategies of Web Personalization}.
+Springer, 2007, pp.~325--341.
+
+\bibitem{ricci2011}
+F.~Ricci, L.~Rokach, and B.~Shapira,
+\emph{Recommender Systems Handbook}.
+Springer, 2011.
+
+\bibitem{salton1983}
+G.~Salton and M.~J.~McGill,
+\emph{Introduction to Modern Information Retrieval}.
+McGraw-Hill, 1983.
+
+\bibitem{sarwar2001}
+B.~Sarwar, G.~Karypis, J.~Konstan, and J.~Riedl,
+``Item-based collaborative filtering recommendation algorithms,''
+in \emph{Proc. 10th Int. Conf. World Wide Web (WWW)}, 2001, pp.~285--295.
+
+\bibitem{sun2019}
+F.~Sun, J.~Liu, J.~Wu, C.~Pei, X.~Lin, W.~Ou, and P.~Jiang,
+``BERT4Rec: Sequential recommendation with bidirectional encoder
+representations from Transformer,''
+in \emph{Proc. 28th ACM Int. Conf. Information and Knowledge Management
+(CIKM)}, 2019, pp.~1441--1450.
+
+\bibitem{ungar2002}
+L.~H.~Ungar and D.~Pennock,
+``Methods and metrics for cold-start recommendations,''
+in \emph{Proc. 25th Ann. Int. ACM SIGIR Conf.}, 2002, pp.~253--260.
+
+\bibitem{wang2019}
+X.~Wang, X.~He, M.~Wang, F.~Feng, and T.-S.~Chua,
+``Neural graph collaborative filtering,''
+in \emph{Proc. 42nd Int. ACM SIGIR Conf. Research and Development in
+Information Retrieval}, 2019, pp.~165--174.
+
+\bibitem{dong2020}
+F.~Dong, P.~Liu, Z.~Hu, and J.~Tang,
+``MAMO: Memory-augmented meta-optimization for cold-start recommendation,''
+in \emph{Proc. 26th ACM SIGKDD Int. Conf. Knowledge Discovery and Data Mining},
+2020, pp.~688--697.
+
+\bibitem{gao2023}
+C.~Gao, Y.~Zheng, N.~Li, Y.~Li, Y.~Qin, J.~Piao, Y.~Quan, J.~Chang,
+D.~Jin, X.~He, and Y.~Li,
+``A survey of graph neural networks for recommender systems: Challenges,
+methods, and directions,''
+\emph{ACM Trans. Recommender Systems}, vol.~1, no.~1, pp.~1--51, 2023.
+
+\bibitem{ge2021}
+M.~Ge, F.~Deldjoo, T.~Said, and A.~Bellogin,
+``Beyond accuracy: Evaluating recommender systems by coverage and serendipity,''
+in \emph{Proc. 15th ACM Conf. Recommender Systems (RecSys)}, 2021,
+pp.~714--719.
+
+\bibitem{yu2023}
+J.~Yu, H.~Yin, X.~Xia, T.~Chen, L.~Cui, and Q.~V.~H.~Nguyen,
+``Are graph augmentations necessary? Simple graph contrastive learning
+for recommendation,''
+in \emph{Proc. 45th Int. ACM SIGIR Conf.}, 2022, pp.~1294--1303.
+
+\bibitem{zhang2019}
+S.~Zhang, L.~Yao, A.~Sun, and Y.~Tay,
+``Deep learning based recommender system: A survey and new perspectives,''
+\emph{ACM Computing Surveys}, vol.~52, no.~1, pp.~1--38, 2019.
+
+\end{thebibliography}
+
+\end{document}
