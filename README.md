@@ -9,10 +9,10 @@
 
 | Fichier | Description |
 |---|---|
-| `SmartCBF_Hybrid.ipynb` | ✅ **Code source complet** — notebook d'expérimentation complet (11 sections, exécutable de bout en bout) |
-| `Article-Systeme de Recommandation.pdf` | 📄 **Article de recherche** — article complet au format IEEE décrivant la méthode, le protocole et les résultats 
-| `Poster-Systeme de Recommandation.pdf` | 🧾 **Poster scientifique** — synthèse visuelle du projet (méthodologie, architecture et résultats principaux) |
-| `README.md` | 📖 Ce fichier |
+| `SmartCBF_Hybrid.ipynb` | **Code source complet** — notebook d'expérimentation complet (11 sections, exécutable de bout en bout) |
+| `Article-Systeme de Recommandation.pdf` | **Article de recherche** — article complet au format IEEE décrivant la méthode, le protocole et les résultats 
+| `Poster-Systeme de Recommandation.pdf` | **Poster scientifique** — synthèse visuelle du projet (méthodologie, architecture et résultats principaux) |
+| `README.md` | Ce fichier |
 
 > Tout ce qui est nécessaire pour reproduire les expériences est contenu dans le notebook. Les jeux de données sont téléchargés automatiquement à l'exécution.
 
@@ -219,7 +219,7 @@ matplotlib
 
 ### Exécution sur Google Colab (recommandé)
 
-Ouvrir `SmartCBF_Hybrid_V2_Enhanced.ipynb` directement dans Google Colab. Le notebook télécharge automatiquement les deux jeux de données MovieLens.
+Ouvrir `SmartCBF_Hybrid.ipynb` directement dans Google Colab. Le notebook télécharge automatiquement les deux jeux de données MovieLens.
 
 ### Exécution en local
 
@@ -227,7 +227,7 @@ Ouvrir `SmartCBF_Hybrid_V2_Enhanced.ipynb` directement dans Google Colab. Le not
 git clone https://github.com/<votre-nom-utilisateur>/AdaptHybrid-CS.git
 cd AdaptHybrid-CS
 pip install -r requirements.txt
-jupyter notebook SmartCBF_Hybrid_V2_Enhanced.ipynb
+jupyter notebook SmartCBF_Hybrid.ipynb
 ```
 
 ### Structure du notebook
