@@ -27,7 +27,6 @@
 
 - [Vue d'ensemble](#vue-densemble)
 - [Questions de recherche](#questions-de-recherche)
-- [Architecture du système](#architecture-du-système)
 - [Contributions principales](#contributions-principales)
 - [Résultats](#résultats)
 - [Installation](#installation)
@@ -63,38 +62,6 @@ Les deux hypothèses sont **confirmées** par les résultats expérimentaux.
 
 ---
 
-## Architecture du système
-
-```
-         ┌────────────────────────┐
-         │   Entrée : User u, Item i │
-         │   n_u = # notations       │
-         └────────────┬───────────┘
-                      │
-          ┌───────────┴────────────┐
-          │                        │
-   ┌──────▼──────┐         ┌───────▼────────┐
-   │   KNN-CF    │         │   SmartCBF     │
-   │ item-item   │         │ TF-IDF genres  │
-   │ cosine sim  │         │ Repli démo.    │
-   │ k voisins   │         │ Popularité     │
-   └──────┬──────┘         └───────┬────────┘
-          │                        │
-          └───────────┬────────────┘
-                      │
-            ┌─────────▼──────────┐
-            │  Pondération adaptative │
-            │  αeff = α* × min(1, n_u / τ)  │
-            │                    │
-            │  n_u ≪ τ → SmartCBF dominant (cold-start) │
-            │  n_u ≥ τ → KNN-CF  dominant (utilisateur actif) │
-            └─────────┬──────────┘
-                      │
-            ┌─────────▼──────────┐
-            │   Prédiction finale  │
-            │ ŷ = αeff·ŷCF + (1−αeff)·ŷCBF │
-            └────────────────────┘
-```
 
 ### Formule de pondération adaptative
 
